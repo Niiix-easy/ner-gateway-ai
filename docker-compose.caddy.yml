@@ -1,0 +1,151 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "${PLATFORM_HTTP_PORT:-80}:80"
+      - "${PLATFORM_HTTPS_PORT:-443}:443"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - platform_env:/etc/platform:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: platform_app:latest
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - platform_storage:/var/www/html/storage
+      - platform_plugins:/var/www/html/plugins
+      - platform_env:/var/www/html/.docker
+    environment:
+      APP_NAME: ${PLATFORM_APP_NAME:-Plataforma}
+      APP_ENV: ${PLATFORM_APP_ENV:-production}
+      APP_DEBUG: ${PLATFORM_APP_DEBUG:-false}
+      PLATFORM_APP_URL: ${PLATFORM_APP_URL:-http://localhost}
+      PLATFORM_WEBHOOK_PUBLIC_URL: ${PLATFORM_WEBHOOK_PUBLIC_URL:-}
+      PORT: "80"
+      APP_INSTALLED: ${PLATFORM_APP_INSTALLED:-true}
+      APP_AUTO_MIGRATE: ${PLATFORM_APP_AUTO_MIGRATE:-false}
+      DB_CONNECTION: ${PLATFORM_DB_CONNECTION:-pgsql}
+      DB_HOST: ${PLATFORM_DB_HOST:-postgres}
+      DB_PORT: ${PLATFORM_DB_PORT:-5432}
+      DB_DATABASE: ${PLATFORM_DB_DATABASE:-platform}
+      DB_USERNAME: ${PLATFORM_DB_USERNAME:-platform}
+      DB_PASSWORD: ${PLATFORM_DB_PASSWORD:-platform}
+      REDIS_HOST: ${PLATFORM_REDIS_HOST:-redis}
+      REDIS_PORT: ${PLATFORM_REDIS_PORT:-6379}
+      CACHE_STORE: ${PLATFORM_CACHE_STORE:-redis}
+      QUEUE_CONNECTION: ${PLATFORM_QUEUE_CONNECTION:-redis}
+      SESSION_DRIVER: ${PLATFORM_SESSION_DRIVER:-file}
+      PLATFORM_DOCKER: "true"
+      PLATFORM_RUN_SETUP: "true"
+      API_INBOUND_WEBHOOKS_ASYNC: ${API_INBOUND_WEBHOOKS_ASYNC:-true}
+      PLATFORM_BUILTIN_INFOPRODUTOS: "true"
+      FLEET_BEACON_ENABLED: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "php -r \"exit(@file_get_contents('http://127.0.0.1/up')===false?1:0);\""]
+      interval: 5s
+      timeout: 10s
+      retries: 36
+      start_period: 180s
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PLATFORM_DB_DATABASE:-platform}
+      POSTGRES_USER: ${PLATFORM_DB_USERNAME:-platform}
+      POSTGRES_PASSWORD: ${PLATFORM_DB_PASSWORD:-platform}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command:
+      - "redis-server"
+      - "--maxmemory"
+      - "${PLATFORM_REDIS_MAXMEMORY:-128mb}"
+      - "--maxmemory-policy"
+      - "${PLATFORM_REDIS_MAXMEMORY_POLICY:-allkeys-lru}"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  queue:
+    image: platform_app:latest
+    restart: unless-stopped
+    command:
+      - "sh"
+      - "-lc"
+      - "set -e; php artisan queue:work --queue=payments,webhooks-outbound,webhooks-inbound,webhooks,payouts,meta-tracking,utmify-tracking,default --sleep=3 --tries=3 --timeout=0 --memory=${PLATFORM_QUEUE_WORKER_MEMORY:-128} --max-time=${PLATFORM_QUEUE_WORKER_MAX_TIME:-3600} --max-jobs=${PLATFORM_QUEUE_WORKER_MAX_JOBS:-1000} & Q=$$!; php artisan schedule:work & S=$$!; trap 'kill $$Q $$S 2>/dev/null || true' INT TERM; while kill -0 $$Q 2>/dev/null && kill -0 $$S 2>/dev/null; do sleep 5; done; kill $$Q $$S 2>/dev/null || true; wait $$Q 2>/dev/null || true; wait $$S 2>/dev/null || true; exit 1"
+    volumes:
+      - platform_storage:/var/www/html/storage
+      - platform_plugins:/var/www/html/plugins
+      - platform_env:/var/www/html/.docker
+    environment:
+      APP_NAME: ${PLATFORM_APP_NAME:-Plataforma}
+      APP_ENV: ${PLATFORM_APP_ENV:-production}
+      APP_DEBUG: ${PLATFORM_APP_DEBUG:-false}
+      PLATFORM_APP_URL: ${PLATFORM_APP_URL:-http://localhost}
+      PLATFORM_WEBHOOK_PUBLIC_URL: ${PLATFORM_WEBHOOK_PUBLIC_URL:-}
+      APP_INSTALLED: ${PLATFORM_APP_INSTALLED:-true}
+      APP_AUTO_MIGRATE: ${PLATFORM_APP_AUTO_MIGRATE:-false}
+      DB_CONNECTION: ${PLATFORM_DB_CONNECTION:-pgsql}
+      DB_HOST: ${PLATFORM_DB_HOST:-postgres}
+      DB_PORT: ${PLATFORM_DB_PORT:-5432}
+      DB_DATABASE: ${PLATFORM_DB_DATABASE:-platform}
+      DB_USERNAME: ${PLATFORM_DB_USERNAME:-platform}
+      DB_PASSWORD: ${PLATFORM_DB_PASSWORD:-platform}
+      REDIS_HOST: ${PLATFORM_REDIS_HOST:-redis}
+      REDIS_PORT: ${PLATFORM_REDIS_PORT:-6379}
+      CACHE_STORE: ${PLATFORM_CACHE_STORE:-redis}
+      QUEUE_CONNECTION: ${PLATFORM_QUEUE_CONNECTION:-redis}
+      SESSION_DRIVER: ${PLATFORM_SESSION_DRIVER:-file}
+      PLATFORM_DOCKER: "true"
+      PLATFORM_RUN_SETUP: "false"
+      API_INBOUND_WEBHOOKS_ASYNC: "true"
+      PLATFORM_BUILTIN_INFOPRODUTOS: "true"
+      FLEET_BEACON_ENABLED: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+    driver: local
+  platform_storage:
+    driver: local
+  platform_plugins:
+    driver: local
+  platform_env:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local

@@ -1,0 +1,18 @@
+{
+	http_port 80
+	https_port 443
+	# Sem redirect HTTP→HTTPS na origem (Cloudflare Flexible no edge / ACME no :80).
+	auto_https disable_redirects
+}
+
+# Cloudflare Flexible (e HTTP local): origem em :80
+:80 {
+	reverse_proxy app:80
+	encode zstd gzip
+}
+
+# HTTPS por domínio (importado de .docker/Caddyfile.domains via volume platform_env):
+# - Domínio direto / ACME: bloco sem "tls" → Let's Encrypt
+# - Cloudflare Full: PLATFORM_CADDY_TLS_MODE=internal → tls internal
+# - Cloudflare Full Strict: .docker/certs/origin*.pem → tls com Origin Cert
+import /etc/platform/Caddyfile.domains

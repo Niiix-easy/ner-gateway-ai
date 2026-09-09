@@ -1,0 +1,79 @@
+# Licença — uso irrestrito, responsabilidade integral do licenciado
+
+## 1. Concessão
+
+Você recebeu uma cópia deste software (o "Software") e pode usá-lo para
+qualquer finalidade, sem restrição, sem royalties, sem prestação de contas e
+sem necessidade de autorização, aviso ou atribuição.
+
+Você pode, sem limitação:
+
+* usar, copiar, modificar, excluir ou substituir qualquer parte do Software;
+* remover ou substituir marcas, logotipos, nomes e créditos;
+* renomear o Software e distribuí-lo sob outro nome;
+* criar obras derivadas;
+* publicar, redistribuir, vender, revender e comercializar;
+* oferecê-lo como serviço (SaaS), hospedá-lo, sublicenciá-lo e transferi-lo;
+* integrá-lo a outro produto;
+* manter o código-fonte público ou privado;
+* alterar a licença das suas versões modificadas.
+
+## 2. Ausência total de garantia
+
+O SOFTWARE É FORNECIDO **"NO ESTADO EM QUE SE ENCONTRA" (AS IS)**, SEM GARANTIA
+DE QUALQUER NATUREZA, EXPRESSA OU IMPLÍCITA, INCLUINDO — MAS NÃO SE LIMITANDO A
+— GARANTIAS DE COMERCIABILIDADE, ADEQUAÇÃO A UMA FINALIDADE ESPECÍFICA,
+CONTINUIDADE, CORREÇÃO, SEGURANÇA E NÃO VIOLAÇÃO DE DIREITOS DE TERCEIROS.
+
+Não há promessa de que o Software funcione, esteja livre de defeitos ou de
+vulnerabilidades, nem de que atenda a qualquer requisito legal, contratual ou
+regulatório aplicável ao seu negócio.
+
+## 3. Responsabilidade integral do licenciado
+
+**A partir do momento em que você instala, executa, distribui ou disponibiliza
+o Software, você assume, de forma exclusiva, integral e irrevogável, toda a
+responsabilidade decorrente dele.** Isso inclui, sem exceção:
+
+* **segurança** da aplicação, do servidor, da rede, das chaves e das credenciais;
+* **proteção de dados pessoais**, incidentes, vazamentos e obrigações da LGPD
+  (ou legislação equivalente), na qualidade de controlador e/ou operador;
+* **conformidade legal, fiscal, tributária e regulatória**, incluindo regras de
+  meios de pagamento, PIX, prevenção à lavagem de dinheiro e ao financiamento do
+  terrorismo, KYC/KYB e sanções;
+* **relação com adquirentes, gateways, bancos e instituições de pagamento**,
+  incluindo credenciais, taxas, liquidações, saques, estornos, chargebacks e
+  disputas (MED);
+* **conteúdo, produtos e conduta** dos seus usuários, vendedores e clientes;
+* **disponibilidade, desempenho, backups, retenção e recuperação de dados**;
+* **atualizações e correções**, inclusive de segurança;
+* **suporte** aos seus próprios clientes.
+
+Quem forneceu este código **não hospeda, não opera, não monitora, não audita,
+não atualiza, não presta suporte e não responde por nada** relacionado à sua
+instalação. Não existe serviço, licenciamento remoto, telemetria, portal ou
+qualquer vínculo continuado.
+
+## 4. Limitação de responsabilidade e indenização
+
+NA MÁXIMA EXTENSÃO PERMITIDA PELA LEI APLICÁVEL, OS AUTORES, TITULARES DE
+DIREITOS E FORNECEDORES DO SOFTWARE **NÃO SERÃO RESPONSÁVEIS** POR QUALQUER
+RECLAMAÇÃO, DANO, PERDA, LUCRO CESSANTE, PERDA DE DADOS, MULTA, SANÇÃO
+ADMINISTRATIVA OU OUTRA RESPONSABILIDADE, SEJA EM AÇÃO CONTRATUAL, EXTRACONTRATUAL
+OU DE OUTRA FORMA, DECORRENTE DO SOFTWARE, DO SEU USO OU DE QUALQUER OUTRA
+OPERAÇÃO RELACIONADA A ELE.
+
+Você concorda em **defender, indenizar e isentar** os autores e fornecedores do
+Software de quaisquer demandas, prejuízos, custos e honorários decorrentes do
+seu uso, da sua operação ou da sua distribuição do Software.
+
+## 5. Onde a lei não permitir renúncia total
+
+Onde a lei aplicável não admitir a renúncia integral prevista acima, a
+responsabilidade dos autores e fornecedores fica limitada ao menor valor
+permitido pela lei, e as demais disposições desta licença permanecem em pleno
+vigor.
+
+---
+
+Consulte também `docs/RESPONSABILIDADE.md`.
