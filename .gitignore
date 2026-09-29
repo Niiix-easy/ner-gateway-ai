@@ -44,3 +44,4 @@ Docs Gateways
 /.backups/
 /.bak-visual-*/
 /.patch-staging/
+vendor/
