@@ -1,0 +1,8 @@
+{
+  "name": "Ner Gateway AI",
+  "description": "An AI-powered payment gateway and checkout system with advanced analytics and affiliate management.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

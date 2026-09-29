@@ -1,5 +1,0 @@
-:80 {
-	reverse_proxy app:80
-}
-
-import /etc/platform/Caddyfile.domains
