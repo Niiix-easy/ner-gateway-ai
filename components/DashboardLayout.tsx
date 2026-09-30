@@ -181,11 +181,19 @@ export function DashboardLayout({ children, title, subtitle, actions }: Dashboar
           </div>
 
           <div className="flex items-center gap-4">
+            <div className="hidden lg:flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl">
+              <Search className="w-3.5 h-3.5 text-slate-400" />
+              <input 
+                type="text"
+                placeholder="BUSCAR EM TUDO..."
+                className="bg-transparent border-none text-[10px] font-bold text-slate-600 dark:text-slate-300 placeholder-slate-400 focus:outline-none w-40 uppercase tracking-widest"
+              />
+            </div>
             <button 
               onClick={() => setIsCommandPaletteOpen(true)}
               className="hidden lg:flex items-center gap-3 px-4 py-2.5 bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:bg-white dark:hover:bg-slate-900 transition-all shadow-sm"
             >
-              <Search className="w-3.5 h-3.5" />
+              <Command className="w-3.5 h-3.5" />
               <span>TERMINAL...</span>
               <span className="ml-8 px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded-md border border-slate-200 dark:border-slate-700 shadow-sm opacity-50 font-mono">⌘K</span>
             </button>

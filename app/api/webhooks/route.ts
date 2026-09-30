@@ -1,27 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { io } from 'socket.io-client';
+import crypto from 'crypto';
 
-// Note: This route is primarily handled by the custom Express server (server.ts) 
-// to enable WebSocket notifications. This file remains for structure and 
-// as a fallback or if running in a standard Next.js environment.
+// In a real app, these keys would be in environment variables
+const WEBHOOK_SECRETS: Record<string, string> = {
+  mercadopago: 'mp_secret_key_123',
+  stripe: 'whsec_secret_key_456',
+  pagbank: 'pag_secret_key_789',
+};
+
+function verifySignature(payload: string, signature: string, secret: string) {
+  const hmac = crypto.createHmac('sha256', secret);
+  hmac.update(payload);
+  return hmac.digest('hex') === signature;
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const rawBody = await req.text();
+    const body = JSON.parse(rawBody);
+    const signature = req.headers.get('x-webhook-signature');
     const pathname = new URL(req.url).pathname;
     const provider = pathname.split('/').pop() || 'unknown';
 
-    console.log(`[Next.js API] Webhook received for ${provider}:`, body);
+    if (!signature || !WEBHOOK_SECRETS[provider] || !verifySignature(rawBody, signature, WEBHOOK_SECRETS[provider])) {
+      return NextResponse.json({ error: 'Assinatura inválida ou não autorizada' }, { status: 401 });
+    }
 
-    // In a standard Next.js environment without a custom server, 
-    // you would use a 3rd party WebSocket provider (Pusher, Ably) 
-    // or a database-based polling system.
-    
-    // For this applet, the custom server.ts handles the actual broadcast.
+    console.log(`[Next.js API] Valid webhook received for ${provider}:`, body);
 
     return NextResponse.json({ 
       received: true, 
-      handledBy: 'Next.js Fallback',
       provider 
     });
   } catch (error) {

@@ -213,41 +213,20 @@ export default function DashboardPage() {
     );
   }, [liveSales, activitySearch]);
 
-  const data = useMemo(() => getDashboardData(filter), [filter]);
+  const memoizedData = useMemo(() => getDashboardData(filter), [filter]);
 
-  // AI Insights Logic
   const insights = useMemo(() => {
-    const trend = data.crescimento_mensal[data.crescimento_mensal.length - 1].crescimento;
-    const bestProduct = [...data.distribuicao_produto].sort((a, b) => b.value - a.value)[0].name;
+    const trend = memoizedData.crescimento_mensal[memoizedData.crescimento_mensal.length - 1].crescimento;
+    const bestProduct = [...memoizedData.distribuicao_produto].sort((a, b) => b.value - a.value)[0].name;
     
     return {
       title: trend > 20 ? "Crescimento Acelerado" : "Estabilidade Operacional",
-      summary: `Seu faturamento em ${data.crescimento_mensal[data.crescimento_mensal.length - 1].mes} cresceu ${trend}% em relação ao mês anterior. O segmento de ${bestProduct} continua sendo o seu maior motor de receita.`,
+      summary: `Seu faturamento em ${memoizedData.crescimento_mensal[memoizedData.crescimento_mensal.length - 1].mes} cresceu ${trend}% em relação ao mês anterior. O segmento de ${bestProduct} continua sendo o seu maior motor de receita.`,
       recommendation: trend > 25 ? "Considere reinvestir o lucro excedente em campanhas de tráfego pago para escalar." : "Mantenha o foco na retenção de clientes para estabilizar o ticket médio."
     };
-  }, [data]);
+  }, [memoizedData]);
 
-  const generateToken = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = 'ner_live_';
-    for (let i = 0; i < 16; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    setSecretToken(result + '...');
-  };
-
-  const handleRetry = (name: string) => {
-    setRetryingIds(prev => [...prev, name]);
-    setTimeout(() => {
-      setRetryingIds(prev => prev.filter(id => id !== name));
-      setToastMsg(`Reenvio do webhook ${name} processado com sucesso.`);
-      setShowToast(true);
-    }, 1500);
-  };
-
-  if (!mounted) return null;
-
-  const headerActions = (
+  const headerActions = useMemo(() => (
     <div className="flex items-center gap-3">
       <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
         {[
@@ -274,7 +253,9 @@ export default function DashboardPage() {
         Upgrade Plan
       </button>
     </div>
-  );
+  ), [filter]);
+
+  if (!mounted) return null;
 
   return (
     <DashboardLayout 

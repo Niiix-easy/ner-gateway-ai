@@ -67,9 +67,11 @@ export default function ProductsPage() {
   const [isSaving, setIsSaving] = useState<string | null>(null);
   const [deleteConfirmationId, setDeleteConfirmationId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedAll, setExpandedAll] = useState(false);
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
   const [isBulkActionLoading, setIsBulkActionLoading] = useState(false);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [latencyAlerts, setLatencyAlerts] = useState<Record<string, boolean>>({});
   const [webhookUrls, setWebhookUrls] = useState<Record<string, string>>({});
   const [webhookProvider, setWebhookProvider] = useState<Record<string, 'mercadopago' | 'stripe' | 'pagbank'>>({});
   const [isTestingWebhook, setIsTestingWebhook] = useState<string | null>(null);
@@ -149,6 +151,7 @@ export default function ProductsPage() {
   };
 
   const toggleExpand = (id: string) => {
+    setExpandedAll(false);
     const isExpanding = expandedId !== id;
     setExpandedId(isExpanding ? id : null);
     setMetadataSearch('');
@@ -288,13 +291,20 @@ export default function ProductsPage() {
     let interval: NodeJS.Timeout;
     if (expandedId) {
       interval = setInterval(() => {
-        setLatencyData(prev => {
-          const current = prev[expandedId] || [];
-          const newData = [...current.slice(1), { 
-            val: 120 + Math.random() * 40 + (Math.sin(Date.now() / 5000) * 20) 
-          }];
-          return { ...prev, [expandedId]: newData };
-        });
+      setLatencyData(prev => {
+        const current = prev[expandedId] || [];
+        const newEntry = { 
+          val: 120 + Math.random() * 600 + (Math.sin(Date.now() / 5000) * 20) 
+        };
+        const newData = [...current.slice(1), newEntry];
+
+        // Alert logic: consecutive > 500ms for more than 3 reqs
+        const recent = newData.slice(-4);
+        const isAlert = recent.length >= 4 && recent.every(r => r.val > 500);
+        setLatencyAlerts(prevAlerts => ({ ...prevAlerts, [expandedId]: isAlert }));
+
+        return { ...prev, [expandedId]: newData };
+      });
       }, 5000); // Update every 5s
     }
     return () => clearInterval(interval);
@@ -308,6 +318,11 @@ export default function ProductsPage() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Shortcut 'x' to expand all
+      if (e.key.toLowerCase() === 'x' && !editingId && !metadataSearch) {
+        setExpandedAll(prev => !prev);
+      }
+
       // Shortcut 'c' to copy config if a row is expanded
       if (e.key.toLowerCase() === 'c' && expandedId && !editingId && !metadataSearch) {
         const product = products.find(p => p.id === expandedId);
@@ -423,14 +438,17 @@ export default function ProductsPage() {
     setShowToast(true);
   };
 
-  const handleBulkDelete = async () => {
+  const handleBatchTestWebhook = async () => {
     setIsBulkActionLoading(true);
-    const updatedProducts = products.filter(p => !selectedIds.includes(p.id));
-    await ProductAPI.saveProducts(updatedProducts);
-    await loadProducts();
-    setSelectedIds([]);
+    setToastMsg(`Iniciando teste em ${selectedIds.length} produtos...`);
+    setShowToast(true);
+
+    for (const id of selectedIds) {
+      await handleTestWebhook(id);
+    }
+    
     setIsBulkActionLoading(false);
-    setToastMsg(`${selectedIds.length} produtos removidos.`);
+    setToastMsg(`Teste em lote concluído.`);
     setShowToast(true);
   };
 
@@ -519,6 +537,16 @@ export default function ProductsPage() {
             />
           </div>
           <div className="flex items-center gap-3">
+            {selectedIds.length > 0 && (
+              <button 
+                onClick={handleBatchTestWebhook}
+                disabled={isBulkActionLoading}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition-all shadow-sm"
+              >
+                <LinkIcon className="w-3.5 h-3.5" />
+                {isBulkActionLoading ? 'Testando...' : 'Testar Conexão em Lote'}
+              </button>
+            )}
             <div className="relative">
               <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <select 
@@ -684,7 +712,21 @@ export default function ProductsPage() {
                         </AnimatePresence>
                       </td>
                     <td className="px-8 py-6 text-right">
-                      <span className="text-sm text-slate-500 dark:text-slate-400 font-mono font-medium">{product.sales}</span>
+                      {(() => {
+                        const trend = product.trend;
+                        const variation = trend.length < 2 ? 0 : (((trend[trend.length - 1] - trend[0]) / trend[0]) * 100).toFixed(1);
+                        return (
+                          <div className="flex flex-col items-end gap-1">
+                            <span className="text-sm text-slate-500 dark:text-slate-400 font-mono font-medium">{product.sales}</span>
+                            <span className={cn(
+                              "text-[9px] font-bold px-1.5 py-0.5 rounded",
+                              parseFloat(variation.toString()) >= 0 ? "text-emerald-600 bg-emerald-500/10" : "text-rose-600 bg-rose-500/10"
+                            )}>
+                              {parseFloat(variation.toString()) >= 0 ? '+' : ''}{variation}%
+                            </span>
+                          </div>
+                        )
+                      })()}
                     </td>
                     <td className="px-8 py-6">
                       <div className="h-10 w-24 mx-auto">
@@ -828,15 +870,15 @@ export default function ProductsPage() {
                     </td>
                   </tr>
                   <AnimatePresence>
-                    {expandedId === product.id && (
+                    {(expandedAll || expandedId === product.id) && (
                       <tr>
-                        <td colSpan={8} className="px-8 py-0 border-none">
+                    <td colSpan={8} className="px-8 py-0 border-none">
                           <motion.div
-                            initial={{ height: 0, opacity: 0, scale: 0.98, y: -10 }}
-                            animate={{ height: 'auto', opacity: 1, scale: 1, y: 0 }}
-                            exit={{ height: 0, opacity: 0, scale: 0.98, y: -10 }}
-                            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                            className="overflow-hidden origin-top"
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3, ease: 'easeInOut' }}
+                            className="overflow-hidden"
                           >
                             <div className="pb-8 pt-4">
                               <div className="bg-slate-50/50 dark:bg-slate-800/20 rounded-3xl border border-slate-100 dark:border-slate-800 p-8">
@@ -846,7 +888,10 @@ export default function ProductsPage() {
                                       <Terminal className="w-5 h-5 text-white" />
                                     </div>
                                     <div>
-                                      <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-none mb-1">Painel de Desenvolvedor</h4>
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-none">Painel de Desenvolvedor</h4>
+                                        <span className="text-[9px] font-black uppercase bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">v2.4</span>
+                                      </div>
                                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Configurações técnicas e chaves de acesso</p>
                                     </div>
                                   </div>
@@ -871,24 +916,46 @@ export default function ProductsPage() {
                                     </div>
                                     <button 
                                       onClick={() => handleCopyConfigs(product)}
-                                      className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[9px] font-bold uppercase tracking-widest rounded-xl hover:bg-slate-800 dark:hover:bg-slate-100 transition-all shadow-lg shadow-slate-900/10 dark:shadow-white/5"
+                                      className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-[9px] font-bold uppercase tracking-widest rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
                                     >
                                       <Copy className="w-3 h-3" />
                                       Copiar Configurações
+                                    </button>
+                                    <button 
+                                      onClick={() => handleTestWebhook(product.id)}
+                                      disabled={isTestingWebhook === product.id}
+                                      className={cn(
+                                        "flex items-center gap-2 px-4 py-2 text-[9px] font-bold uppercase tracking-widest rounded-xl transition-all shadow-sm",
+                                        lastTestSuccess[product.id] 
+                                          ? "bg-emerald-500 text-white" 
+                                          : "bg-slate-900 dark:bg-white text-white dark:text-slate-900"
+                                      )}
+                                    >
+                                      {isTestingWebhook === product.id ? (
+                                        <RotateCcw className="w-3 h-3 animate-spin" />
+                                      ) : lastTestSuccess[product.id] ? (
+                                        <CheckCircle2 className="w-3 h-3" />
+                                      ) : (
+                                        <WifiOff className="w-3 h-3" />
+                                      )}
+                                      {isTestingWebhook === product.id ? 'Testando...' : lastTestSuccess[product.id] ? 'Conectado' : 'Testar Webhook'}
                                     </button>
                                   </div>
                                 </div>
 
                                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                    {(!metadataSearch || ['latência', 'estabilidade', 'performance', 'região', 'geográfico', 'latency'].some(k => k.includes(metadataSearch.toLowerCase()))) && (
-                                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 bg-white dark:bg-slate-900/50 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm relative group/card">
-                                        <div className="flex items-center justify-between">
-                                          <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500">
-                                            <RotateCcw className="w-4 h-4" />
-                                            <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Latência por Região (ms)</span>
-                                          </div>
-                                          <div className="flex gap-2">
-                                            <span className="text-[8px] font-bold text-indigo-400">US-East</span>
+                                    <div className="bg-white dark:bg-slate-900/50 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-2">
+                                      <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                        <span>Consumo de Cota API</span>
+                                        <span>{(Math.random() * 100).toFixed(0)}%</span>
+                                      </div>
+                                      <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                        <div 
+                                          className="h-full bg-indigo-500 rounded-full" 
+                                          style={{ width: `${Math.random() * 100}%` }}
+                                        />
+                                      </div>
+                                    </div>
                                             <span className="text-[8px] font-bold text-emerald-400">EU-West</span>
                                             <span className="text-[8px] font-bold text-amber-400">SA-East</span>
                                           </div>
