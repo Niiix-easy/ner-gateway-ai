@@ -333,10 +333,10 @@ export default function DashboardPage() {
         transition={{ delay: 0.1 }}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
       >
-        <StatCard title="Faturamento Bruto" value={`R$ ${data.vendas_totais.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} trend={12.5} icon={TrendingUp} />
-        <StatCard title="Novas Vendas" value={data.quantidade_vendas} trend={5.2} icon={ShoppingBag} />
-        <StatCard title="Taxa de Conversão" value={`${data.taxa_conversao}%`} trend={0.8} icon={Activity} />
-        <StatCard title="Ticket Médio" value={`R$ ${data.ticket_medio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} trend={-1.2} icon={BarChart3} />
+        <StatCard title="Faturamento Bruto" value={`R$ ${memoizedData.vendas_totais.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} trend={12.5} icon={TrendingUp} />
+        <StatCard title="Novas Vendas" value={memoizedData.quantidade_vendas} trend={5.2} icon={ShoppingBag} />
+        <StatCard title="Taxa de Conversão" value={`${memoizedData.taxa_conversao}%`} trend={0.8} icon={Activity} />
+        <StatCard title="Ticket Médio" value={`R$ ${memoizedData.ticket_medio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} trend={-1.2} icon={BarChart3} />
       </motion.section>
 
       {/* Main Charts Grid */}
@@ -369,14 +369,14 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="h-[400px]">
-            <SalesChart data={data.grafico_vendas} showPrediction={showPredictions} />
+            <SalesChart data={memoizedData.grafico_vendas} showPrediction={showPredictions} />
           </div>
         </div>
 
         <div className="bg-white dark:bg-slate-900 p-10 border border-slate-100 dark:border-slate-800 rounded-3xl shadow-sm">
           <h3 className="text-slate-900 dark:text-white font-bold uppercase text-[10px] tracking-widest mb-10">Mix de Produtos</h3>
           <div className="h-[400px]">
-            <RevenuePieChart data={data.distribuicao_produto} />
+            <RevenuePieChart data={memoizedData.distribuicao_produto} />
           </div>
         </div>
       </motion.section>
@@ -404,7 +404,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="space-y-6">
-            {data.integracoes.map((item) => (
+            {memoizedData.integracoes.map((item) => (
               <div key={item.nome} className="relative group/card">
                 <div className="flex items-center justify-between p-5 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl group hover:border-slate-200 dark:hover:border-slate-700 transition-all">
                   <div className="flex items-center gap-4">

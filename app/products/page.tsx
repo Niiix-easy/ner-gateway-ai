@@ -517,52 +517,8 @@ export default function ProductsPage() {
   );
 
   return (
-    <DashboardLayout 
-      title="Meus Produtos" 
-      subtitle="Gerencie seu catálogo de produtos digitais e serviços."
-      actions={actions}
-    >
+    <div className="min-h-screen">
       <Toast isVisible={showToast} message={toastMsg} onClose={() => setShowToast(false)} />
-      
-      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm transition-all">
-        <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
-            <input 
-              type="text"
-              placeholder="BUSCAR PRODUTO..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-3 text-[10px] font-bold tracking-widest focus:outline-none dark:text-white transition-all focus:ring-2 focus:ring-slate-900/5"
-            />
-          </div>
-          <div className="flex items-center gap-3">
-            {selectedIds.length > 0 && (
-              <button 
-                onClick={handleBatchTestWebhook}
-                disabled={isBulkActionLoading}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition-all shadow-sm"
-              >
-                <LinkIcon className="w-3.5 h-3.5" />
-                {isBulkActionLoading ? 'Testando...' : 'Testar Conexão em Lote'}
-              </button>
-            )}
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-              <select 
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-                className="appearance-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-8 py-3 text-[10px] font-bold tracking-widest text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900/5 cursor-pointer uppercase"
-              >
-                <option value="All">TODOS OS TIPOS</option>
-                <option value="Digital">DIGITAL</option>
-                <option value="SaaS">SAAS</option>
-                <option value="Service">SERVICE</option>
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-            </div>
-          </div>
-        </div>
         
         <div className="overflow-x-auto">
           <table className="w-full text-left">
@@ -590,7 +546,8 @@ export default function ProductsPage() {
             <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
               {filteredProducts.map((product) => (
                 <React.Fragment key={product.id}>
-                  <tr 
+                  <motion.tr 
+                    whileHover={{ scale: 1.01, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)" }}
                     onClick={() => toggleExpand(product.id)}
                     onMouseEnter={(e) => {
                       setExpandedHoverId(product.id);
@@ -599,7 +556,7 @@ export default function ProductsPage() {
                     onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
                     onMouseLeave={() => setExpandedHoverId(null)}
                     className={cn(
-                      "hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-all cursor-pointer group relative",
+                      "hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-all cursor-pointer group relative z-10",
                       expandedId === product.id && "bg-slate-50/50 dark:bg-slate-800/30",
                       selectedIds.includes(product.id) && "bg-indigo-50/30 dark:bg-indigo-500/5"
                     )}
@@ -868,7 +825,7 @@ export default function ProductsPage() {
                             )}
                       </div>
                     </td>
-                  </tr>
+                  </motion.tr>
                   <AnimatePresence>
                     {(expandedAll || expandedId === product.id) && (
                       <tr>
@@ -891,6 +848,26 @@ export default function ProductsPage() {
                                       <div className="flex items-center gap-2 mb-1">
                                         <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-none">Painel de Desenvolvedor</h4>
                                         <span className="text-[9px] font-black uppercase bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">v2.4</span>
+                                        { (product.webhookFrequency || Math.floor(Math.random() * 60)) > 50 && (
+                                          <motion.div
+                                            initial={{ opacity: 0.5 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ repeat: Infinity, repeatType: 'reverse', duration: 0.5 }}
+                                            className="text-[9px] font-black uppercase bg-rose-500 text-white px-1.5 py-0.5 rounded"
+                                          >
+                                            Rate Limited
+                                          </motion.div>
+                                        )}
+                                        { (product.consecutiveErrors || Math.floor(Math.random() * 5)) >= 3 && (
+                                          <motion.div
+                                            initial={{ opacity: 0.5 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ repeat: Infinity, repeatType: 'reverse', duration: 0.5 }}
+                                            className="text-[9px] font-black uppercase bg-amber-500 text-white px-1.5 py-0.5 rounded"
+                                          >
+                                            Erro de Webhook
+                                          </motion.div>
+                                        )}
                                       </div>
                                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Configurações técnicas e chaves de acesso</p>
                                     </div>
@@ -1482,6 +1459,6 @@ export default function ProductsPage() {
           </div>
         )}
       </AnimatePresence>
-    </DashboardLayout>
+    </div>
   );
 }
